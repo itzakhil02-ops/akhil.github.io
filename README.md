@@ -1,4 +1,3 @@
-# akhil.github.io
 <!doctype html>
 <html lang="en">
 <head>
@@ -209,7 +208,6 @@
           <div class="sep"></div>
 
           <div class="links">
-            <!-- NOTE: These are Notion URLs you can replace if needed. -->
             <a class="link" href="https://app.notion.com/p/08b26c4871ae836a84e5012f96862c6b" target="_blank" rel="noreferrer">
               <div class="k">Syllabus Tracker</div>
               <div class="s">Track coverage chapter-wise</div>
@@ -365,7 +363,6 @@
   const progRoot = document.getElementById("progRoot");
 
   function parseExamLocal(s){
-    // Accept "YYYY-MM-DD HH:mm"
     const m = s.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?$/);
     if(!m) return null;
     const y = Number(m[1]), mo = Number(m[2]) - 1, d = Number(m[3]);
@@ -375,8 +372,6 @@
     if(Number.isNaN(dt.getTime())) return null;
     return dt;
   }
-
-  function pad2(n){ return String(n).padStart(2,"0"); }
 
   function renderExam(){
     examDate.value = state.exam;
@@ -463,9 +458,6 @@
       range.min = "0";
       range.max = "100";
       range.value = String(val);
-      range.addEventListener("input", () => {
-        badge.textContent = `${range.value}%`;
-      });
 
       const bar = document.createElement("div");
       bar.style.marginTop = "10px";
@@ -476,6 +468,7 @@
       bar.innerHTML = `<div style="height:100%; width:${val}%; border-radius:999px; background:${item.color}; opacity:.9"></div>`;
 
       range.addEventListener("input", () => {
+        badge.textContent = `${range.value}%`;
         bar.firstChild.style.width = `${range.value}%`;
       });
 
@@ -497,17 +490,71 @@
   }
 
   function saveProgress(){
-    // Read current sliders from DOM order
     const ranges = progRoot.querySelectorAll('input[type="range"]');
     ranges.forEach((r, idx) => {
       const key = progressItems[idx].key;
       state.progress[key] = Number(r.value);
     });
     saveState(state);
-    renderProgress(); // re-render to sync bars precisely
+    renderProgress();
   }
 
-  // Buttons
+  // ====== Button Event Listeners ======
   saveExamBtn.addEventListener("click", () => {
     const v = examDate.value.trim();
-    if(!parseExam
+    if(!parseExamLocal(v)){
+      alert("Please enter a valid date format: YYYY-MM-DD HH:mm (e.g., 2027-05-02 14:00)");
+      return;
+    }
+    state.exam = v;
+    saveState(state);
+    updateCountdown();
+    alert("Exam date saved!");
+  });
+
+  setExamBtn.addEventListener("click", () => {
+    examDate.focus();
+  });
+
+  resetBtn.addEventListener("click", () => {
+    if(confirm("Are you sure you want to reset all stored data?")){
+      localStorage.removeItem(KEY);
+      state = loadState();
+      renderExam();
+      renderPlan();
+      renderProgress();
+      updateCountdown();
+    }
+  });
+
+  savePlanBtn.addEventListener("click", () => {
+    savePlan();
+    alert("Daily plan saved!");
+  });
+
+  clearPlanBtn.addEventListener("click", () => {
+    if(confirm("Clear today's study plan?")){
+      state.plan = { focus: "Physics", top3: "", hrsPhy: "", hrsChem: "", hrsBio: "" };
+      saveState(state);
+      renderPlan();
+    }
+  });
+
+  saveProgressBtn.addEventListener("click", () => {
+    saveProgress();
+    alert("Progress saved!");
+  });
+
+  [hrsPhy, hrsChem, hrsBio].forEach(input => {
+    input.addEventListener("input", renderTotalHours);
+  });
+
+  // ====== Initialization ======
+  renderExam();
+  renderPlan();
+  renderProgress();
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+</script>
+</body>
+</html>
